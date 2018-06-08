@@ -6,8 +6,9 @@ const maxAge = 1000 * 3600 * 24 * 7;
 
 app.use(express.static(path.join(__dirname, 'build'), { maxAge }));
 
-const port = process.env.PORT || 3000;
+const port = process.env.NODE_PORT || 3000;
 
 app.listen(port, function() {
-  console.log(`Listening on ${port}`);
+  // tslint:disable-next-line:no-console
+  console.info(`Listening on ${port}`);
 });
