@@ -1,7 +1,13 @@
+body {
+  font-family: monospace;
+  margin: 0;
+}
+
 * {
   box-sizing: border-box;
 }
 
-body {
-
+h2 {
+  font-size: 4em;
+  text-align: center;
 }
