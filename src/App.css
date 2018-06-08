@@ -1,5 +1,14 @@
-.hovered {
-  fill: red;
+
+path {
+  cursor: pointer;
+  fill: #222222;
+  stroke: dodgerblue;
+  stroke-width: 2px;
+}
+
+
+.selectedArea {
+  fill: lightsteelblue;
 }
 
 .button {
