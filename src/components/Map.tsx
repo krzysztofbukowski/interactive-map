@@ -32,7 +32,6 @@ class Map extends React.Component<IMapProps, IMapState> {
   constructor(props: IMapProps) {
     super(props);
 
-
     this.state = {
       currentArea: ''
     };
@@ -64,13 +63,13 @@ class Map extends React.Component<IMapProps, IMapState> {
   };
 
   private renderMap = (mapData: Topology) => {
-    const svg = d3.select(this.ref),
-      swedenProjection = d3.geoConicEqualArea()
-        .scale(this.ref.height.animVal.value * 3.5)
-        .center(SWEDEN_CENTER)
-        .translate([this.ref.width.animVal.value / 2, this.ref.height.animVal.value / 2]),
-      swedenProjectionPath = d3.geoPath(swedenProjection),
-      featureCollection = topojson.feature(mapData, mapData.objects.national_250 as GeometryCollection);
+    const svg = d3.select(this.ref);
+    const swedenProjection = d3.geoConicEqualArea()
+      .scale(this.ref.height.animVal.value * 3.5)
+      .center(SWEDEN_CENTER)
+      .translate([this.ref.width.animVal.value / 2, this.ref.height.animVal.value / 2]);
+    const swedenProjectionPath = d3.geoPath(swedenProjection);
+    const featureCollection = topojson.feature(mapData, mapData.objects.national_250 as GeometryCollection);
 
     svg.append('g')
       .attr('class', 'counties')
