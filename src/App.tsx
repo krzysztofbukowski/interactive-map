@@ -26,7 +26,7 @@ class App extends React.Component<{}, IAppState> {
         />
 
         {this.state.currentArea && <h2>{this.state.currentArea}</h2>}
-        {!this.state.currentArea && <h2><em>Click on the map's area to reveal its name</em></h2>}
+        {!this.state.currentArea && <h2><em>Move your mouse over the map</em></h2>}
 
       </div>
     );

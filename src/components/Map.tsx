@@ -82,7 +82,7 @@ class Map extends React.Component<IMapProps, IMapState> {
 
     const paths = svg.selectAll('.counties path');
 
-    paths.on('mousedown', (feature: IValnattFeature) => {
+    paths.on('mousemove', (feature: IValnattFeature) => {
       this.handleAreaSelection(feature);
     }).on('mouseover', function (feature: IValnattFeature) {
       (this as Element).classList.add('selectedArea');
