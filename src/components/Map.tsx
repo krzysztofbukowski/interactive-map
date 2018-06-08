@@ -24,6 +24,8 @@ interface IValnattFeature extends Feature {
   }
 }
 
+const SWEDEN_CENTER: [number, number] = [15.1, 61.6];
+
 class Map extends React.Component<IMapProps, IMapState> {
   private ref: SVGSVGElement;
 
@@ -34,42 +36,6 @@ class Map extends React.Component<IMapProps, IMapState> {
     this.state = {
       currentArea: ''
     };
-  }
-
-  public componentDidMount() {
-    const svg = d3.select(this.ref);
-    const swedenCenter: [number, number] = [15.1, 61.6];
-    const swedenProjection = d3.geoConicEqualArea()
-      .scale(this.ref.height.animVal.value * 3.5)
-      .center(swedenCenter)
-      .translate([this.ref.width.animVal.value / 2, this.ref.height.animVal.value / 2]);
-
-    const swedenProjectionPath = d3.geoPath(swedenProjection);
-
-    fetch(this.props.dataSourceUrl)
-      .then((response: any) => response.json())
-      .then((mapData: Topology) => {
-        const featureCollection = topojson.feature(mapData, mapData.objects.national_250 as GeometryCollection);
-
-        svg.append('g')
-          .attr('class', 'counties')
-          .selectAll('path')
-          .data(featureCollection.features)
-          .enter().append('path')
-          .attr('d', (item: any) => {
-            return swedenProjectionPath(item);
-          });
-
-        const paths = svg.selectAll('.counties path');
-
-        paths.on('mousedown', (feature: IValnattFeature) => {
-          this.handleAreaSelection(feature);
-        }).on('mouseover', function (feature: IValnattFeature) {
-          (this as Element).classList.add('selectedArea');
-        }).on('mouseout', function (feature: IValnattFeature) {
-          (this as Element).classList.remove('selectedArea');
-        });
-      });
   }
 
   public render() {
@@ -85,10 +51,45 @@ class Map extends React.Component<IMapProps, IMapState> {
     );
   }
 
+  public componentDidMount() {
+    fetch(this.props.dataSourceUrl)
+      .then((response: any) => response.json())
+      .then(this.renderMap);
+  }
+
   private handleAreaSelection = (path: IValnattFeature) => {
     if (this.props.onAreaSelected) {
       this.props.onAreaSelected(path.properties.LAN_NAMN);
     }
+  };
+
+  private renderMap = (mapData: Topology) => {
+    const svg = d3.select(this.ref),
+      swedenProjection = d3.geoConicEqualArea()
+        .scale(this.ref.height.animVal.value * 3.5)
+        .center(SWEDEN_CENTER)
+        .translate([this.ref.width.animVal.value / 2, this.ref.height.animVal.value / 2]),
+      swedenProjectionPath = d3.geoPath(swedenProjection),
+      featureCollection = topojson.feature(mapData, mapData.objects.national_250 as GeometryCollection);
+
+    svg.append('g')
+      .attr('class', 'counties')
+      .selectAll('path')
+      .data(featureCollection.features)
+      .enter().append('path')
+      .attr('d', (item: any) => {
+        return swedenProjectionPath(item);
+      });
+
+    const paths = svg.selectAll('.counties path');
+
+    paths.on('mousedown', (feature: IValnattFeature) => {
+      this.handleAreaSelection(feature);
+    }).on('mouseover', function (feature: IValnattFeature) {
+      (this as Element).classList.add('selectedArea');
+    }).on('mouseout', function (feature: IValnattFeature) {
+      (this as Element).classList.remove('selectedArea');
+    });
   };
 }
 
