@@ -1,21 +1,26 @@
 import * as React from 'react';
 import './App.css';
+import DefaultVersionContainer from './containers/DefaultVersionContainer';
+import TvVersionContainer from './containers/TvVersionContainer';
 
-import logo from './logo.svg';
+export enum VERSIONS {
+  DEFAULT = 'default',
+  TV = 'tv'
+}
 
-class App extends React.Component {
+interface IAppProps {
+  version?: VERSIONS
+}
+
+class App extends React.Component<IAppProps, {}> {
   public render() {
-    return (
-      <div className="App">
-        <header className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
-          <h1 className="App-title">Welcome to React</h1>
-        </header>
-        <p className="App-intro">
-          To get started, edit <code>src/App.tsx</code> and save to reload.
-        </p>
-      </div>
-    );
+    switch (this.props.version) {
+      case 'tv':
+        return <TvVersionContainer/>;
+      case 'default':
+      default:
+        return <DefaultVersionContainer/>;
+    }
   }
 }
 
