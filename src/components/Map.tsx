@@ -1,9 +1,8 @@
 import * as d3 from 'd3';
+import { Feature } from 'geojson';
 import * as React from 'react';
 import * as topojson from 'topojson';
-
 import { GeometryCollection, Topology } from 'topojson-specification';
-import { Feature } from 'geojson';
 
 interface IMapProps {
   width: string;
