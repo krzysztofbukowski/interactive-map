@@ -1,42 +1,19 @@
 import * as React from 'react';
-import Map from './components/Map';
 import './App.css';
+import DefaultVersionContainer from './containers/DefaultVersionContainer';
 
-interface IAppState {
-  currentArea: string;
+interface IAppProps {
+  version?: 'default'
 }
 
-class App extends React.Component<{}, IAppState> {
-  constructor(props: {}) {
-    super(props);
-
-    this.state = {
-      currentArea: ''
-    };
-  }
-
+class App extends React.Component<IAppProps, {}> {
   public render() {
-    return (
-      <div>
-        <Map
-          width={`100vw`}
-          height={`50vh`}
-          dataSourceUrl="/sweden.json"
-          onAreaSelected={this.handleAreaSelection}
-        />
-
-        {this.state.currentArea && <h2>{this.state.currentArea}</h2>}
-        {!this.state.currentArea && <h2><em>Move your mouse over the map</em></h2>}
-
-      </div>
-    );
+    switch (this.props.version) {
+      case 'default':
+      default:
+        return <DefaultVersionContainer/>;
+    }
   }
-
-  private handleAreaSelection = (areaName: string) => {
-    this.setState({
-      currentArea: areaName
-    })
-  };
 }
 
 export default App;
