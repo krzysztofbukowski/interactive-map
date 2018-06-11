@@ -9,19 +9,27 @@ interface IMapProps {
   width: string;
   height: string;
   dataSourceUrl: string;
-  onAreaSelected?: (areaName: string) => void
+  onAreaSelected?: (area: IValnattArea) => void
 }
 
 interface IMapState {
   currentArea: string;
 }
 
+interface IValnattFeatureProperties {
+  LAN: string,
+  LAN_NAMN: string,
+  ID: string
+}
+
+export interface IValnattArea {
+ area: string;
+ name: string;
+ id: string;
+}
+
 interface IValnattFeature extends Feature {
-  properties: {
-    LAN: string,
-    LAN_NAMN: string,
-    ID: string
-  }
+  properties: IValnattFeatureProperties
 }
 
 const SWEDEN_CENTER: [number, number] = [15.1, 61.6];
@@ -41,7 +49,6 @@ class Map extends React.Component<IMapProps, IMapState> {
     return (
       <div>
         <svg
-          className="container"
           ref={(ref: SVGSVGElement) => this.ref = ref}
           width={this.props.width}
           height={this.props.height}
@@ -55,12 +62,6 @@ class Map extends React.Component<IMapProps, IMapState> {
       .then((response: any) => response.json())
       .then(this.renderMap);
   }
-
-  private handleAreaSelection = (path: IValnattFeature) => {
-    if (this.props.onAreaSelected) {
-      this.props.onAreaSelected(path.properties.LAN_NAMN);
-    }
-  };
 
   private renderMap = (mapData: Topology) => {
     const svg = d3.select(this.ref);
@@ -82,13 +83,23 @@ class Map extends React.Component<IMapProps, IMapState> {
 
     const paths = svg.selectAll('.counties path');
 
-    paths.on('mousemove', (feature: IValnattFeature) => {
+    paths.on('mousedown', (feature: IValnattFeature) => {
       this.handleAreaSelection(feature);
     }).on('mouseover', function (feature: IValnattFeature) {
       (this as Element).classList.add('selectedArea');
     }).on('mouseout', function (feature: IValnattFeature) {
       (this as Element).classList.remove('selectedArea');
     });
+  };
+
+  private handleAreaSelection = (path: IValnattFeature) => {
+    if (this.props.onAreaSelected) {
+      this.props.onAreaSelected({
+        area: path.properties.LAN,
+        id: path.properties.ID,
+        name: path.properties.LAN_NAMN
+      });
+    }
   };
 }
 
