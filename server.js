@@ -1,5 +1,5 @@
-const express = require('express'),
-      path = require('path');
+const express = require('express');
+const path = require('path');
 
 const app = express();
 const maxAge = 1000 * 3600 * 24 * 7;
