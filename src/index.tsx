@@ -1,5 +1,7 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
+import { HashRouter } from 'react-router-dom';
+
 import App, { VERSIONS } from './App';
 import './index.css';
 // import registerServiceWorker from './registerServiceWorker';
@@ -29,7 +31,9 @@ if (isTv) {
 }
 
 ReactDOM.render(
-  <App version={version}/>,
+  <HashRouter>
+    <App version={version}/>
+  </HashRouter>,
   document.getElementById('root') as HTMLElement
 );
 

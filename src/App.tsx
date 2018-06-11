@@ -1,4 +1,6 @@
 import * as React from 'react';
+import { Route } from 'react-router';
+
 import './App.css';
 import DefaultVersionContainer from './containers/DefaultVersionContainer';
 import TvVersionContainer from './containers/TvVersionContainer';
@@ -16,10 +18,18 @@ class App extends React.Component<IAppProps, {}> {
   public render() {
     switch (this.props.version) {
       case 'tv':
-        return <TvVersionContainer/>;
+        return <Route
+          path="/"
+          isExact={true}
+          component={TvVersionContainer}
+        />;
       case 'default':
       default:
-        return <DefaultVersionContainer/>;
+        return <Route
+          path="/"
+          isExact={true}
+          component={DefaultVersionContainer}
+        />;
     }
   }
 }
