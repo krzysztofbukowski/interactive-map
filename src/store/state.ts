@@ -1,5 +1,7 @@
+import { IMapArea } from '../components/Map';
+
 export interface IParamsState {
-  area?: string
+  area?: IMapArea
 }
 
 export interface IValnattState {

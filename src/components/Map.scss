@@ -1,0 +1,27 @@
+.map {
+  &__background {
+    fill: #044658;
+  }
+
+  &__path {
+    fill: black;
+    stroke: white;
+    cursor: pointer;
+    transition: opacity 750ms linear;
+
+    &--active {
+      //fill: dodgerblue;
+    }
+
+    &--inactive {
+      opacity: 0;
+      transition: opacity 750ms linear;
+    }
+
+    &--hovered {
+      opacity: 1;
+      fill: #179bbf;
+      transition: fill 100ms linear;
+    }
+  }
+}

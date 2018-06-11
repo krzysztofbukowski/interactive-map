@@ -1,44 +1,62 @@
 import * as React from 'react';
-import Map, { IValnattArea } from '../components/Map';
-import './DefaultVersionContainer.css';
+import { connect } from 'react-redux';
+import { AnyAction, Dispatch } from 'redux';
 
-interface IDefaultMapContainerState {
-  currentArea: string;
+import { setArea } from '../actions/params';
+import Map, { IMapArea } from '../components/Map';
+import './DefaultVersionContainer.css';
+import { IValnattState } from '../store/state';
+
+
+interface IDefaultMapContainerProps {
+  currentArea: IMapArea;
+  dispatch: {
+    setArea: (area: IMapArea) => any
+  }
 }
 
-class DefaultVersionContainer extends React.Component<{}, IDefaultMapContainerState> {
-
-  constructor(props: {}) {
-    super(props);
-
-    this.state = {
-      currentArea: ''
-    };
-  }
-
+class DefaultVersionContainer extends React.Component<IDefaultMapContainerProps> {
   public render() {
+    let areaLabel = 'Hela Sverige';
+
+    if (this.props.currentArea.name !== undefined && this.props.currentArea.name !== 'national') {
+      areaLabel = this.props.currentArea.name;
+    }
+
     return (
       <div className="default">
         <Map
           width={`100vw`}
-          height={`50vh`}
+          height={`calc(100vh - 100px)`}
           dataSourceUrl="/sweden.json"
           onAreaSelected={this.handleAreaSelection}
+          area={this.props.currentArea.area || 'national'}
         />
 
-        {this.state.currentArea && <h2>{this.state.currentArea}</h2>}
-        {!this.state.currentArea &&
-        <h2><em>Click on the map's region</em></h2>}
-        <div className="logos"/>
+        <div className="footer">
+          {<h2>{areaLabel}</h2>}
+        </div>
       </div>
     );
   }
 
-  private handleAreaSelection = (area: IValnattArea) => {
-    this.setState({
-      currentArea: area.name
-    });
+  private handleAreaSelection = (area: IMapArea) => {
+    this.props.dispatch.setArea(area);
   };
 }
 
-export default DefaultVersionContainer;
+const mapStateToProps = (state: IValnattState) => {
+  return {
+    currentArea: state.params.area
+  };
+};
+
+function mapDispatchToProps(dispatch: Dispatch<AnyAction>) {
+  return {
+    dispatch: {
+      setArea: (area: IMapArea) => dispatch(setArea(area))
+    }
+  };
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(DefaultVersionContainer);
