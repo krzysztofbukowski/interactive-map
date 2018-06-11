@@ -9,5 +9,6 @@ app.use(express.static(path.join(__dirname, 'build'), { maxAge }));
 const port = process.env.PORT || 3000;
 
 app.listen(port, function() {
-  console.log(`Listening on ${port}`);
+  // tslint:disable-next-line:no-console
+  console.info(`Listening on ${port}`);
 });
