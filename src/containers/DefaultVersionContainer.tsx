@@ -28,7 +28,7 @@ class DefaultVersionContainer extends React.Component<IDefaultMapContainerProps>
         <Map
           width={`100vw`}
           height={`calc(100vh - 100px)`}
-          dataSourceUrl="/sweden.json"
+          dataSourceHost="http://localhost:5000"
           onAreaSelected={this.handleAreaSelection}
           area={this.props.currentArea.area || 'national'}
         />

@@ -10,7 +10,7 @@ import { Selection } from 'd3-selection';
 interface IMapProps {
   width: string;
   height: string;
-  dataSourceUrl: string;
+  dataSourceHost: string;
   onAreaSelected?: (area: IMapArea) => void
   area?: 'national' | string
 }
@@ -84,7 +84,7 @@ class Map extends React.Component<IMapProps, IMapState> {
 
     this.g = svg.append('g');
 
-    fetch(this.props.dataSourceUrl)
+    fetch(`${this.props.dataSourceHost}/api/topojson/val2014/national/100`)
       .then((response: any) => response.json())
       .then((topology: Topology) => {
         this.renderMap(svg, topology);
@@ -105,7 +105,7 @@ class Map extends React.Component<IMapProps, IMapState> {
     });
 
 
-    this.svg.select(`#lan_10`).style('display', 'none');
+    // this.svg.select(`#lan_10`).style('display', 'none');
 
     this.g.append('g')
       .selectAll('path')
@@ -192,10 +192,14 @@ class Map extends React.Component<IMapProps, IMapState> {
   };
 
   private handleAreaSelection = (feature: IMapFeature) => {
-    fetch('/lan_10.json')
+    const level = feature.properties.ID.length === 2 ? 10 : 1;
+    const key = level === 10 ? `lan_${feature.properties.ID}_${level}` : `kommun_${feature.properties.ID}_${level}`;
+
+    fetch(`${this.props.dataSourceHost}/api/topojson/val2014/${feature.properties.ID}/${level}`)
       .then((response: Response) => response.json())
       .then((topology: Topology) => {
-        this.renderMap(this.svg, topology, 'lan_10_10');
+
+        this.renderMap(this.svg, topology, key);
         this.zoomToFeature(feature);
       });
 
