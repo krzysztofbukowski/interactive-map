@@ -21,12 +21,12 @@ ReduxQuerySync({
       selector: (state: IValnattState) => state.params.area,
       stringToValue: (s: string): IMapArea => {
         return {
-          area: s,
+          area: s ? s : 'national',
           id: s,
           name: 'national'
         }
       },
-      valueToString: (value: IMapArea) => `${value.id}`
+      valueToString: (value: IMapArea) => value.id ? `${value.id}` : 'national'
     },
   },
   replaceState: true,

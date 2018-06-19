@@ -9,7 +9,13 @@ export interface IValnattState {
 }
 
 const initialState: IValnattState = {
-  params: {}
+  params: {
+    area: {
+      area: 'national',
+      id: '',
+      name: 'national'
+    }
+  }
 };
 
 export default initialState;
