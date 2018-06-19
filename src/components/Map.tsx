@@ -17,10 +17,6 @@ interface IMapProps {
   area?: 'national' | string
 }
 
-interface IMapState {
-  currentArea: string;
-}
-
 interface ILanFeatureProperties {
   LAN: string,
   LAN_NAMN: string,
@@ -63,20 +59,12 @@ interface IMapFeature extends Feature {
 
 const SWEDEN_CENTER: [number, number] = [15.1, 61.6];
 
-class Map extends React.Component<IMapProps, IMapState> {
+class Map extends React.Component<IMapProps, {}> {
   private ref: SVGSVGElement;
   private centeredFeature: IMapFeature | undefined;
   private swedenProjectionPath: d3.GeoPath;
   private svg: Selection<SVGSVGElement, any, any, undefined>;
   private g: any;
-
-  constructor(props: IMapProps) {
-    super(props);
-
-    this.state = {
-      currentArea: ''
-    };
-  }
 
   public render() {
     return (
@@ -146,12 +134,6 @@ class Map extends React.Component<IMapProps, IMapState> {
   }
 
   private zoomToFeature = (feature: IMapFeature) => {
-    let x: number;
-    let y: number;
-    let dx: number;
-    let dy: number;
-    let translate: [number, number];
-    let scale;
     const width = this.ref.width.animVal.value;
     const height = this.ref.height.animVal.value;
 
@@ -162,13 +144,12 @@ class Map extends React.Component<IMapProps, IMapState> {
     }
 
     const bounds = this.swedenProjectionPath.bounds(feature);
-
-    dx = bounds[1][0] - bounds[0][0];
-    dy = bounds[1][1] - bounds[0][1];
-    x = (bounds[0][0] + bounds[1][0]) / 2;
-    y = (bounds[0][1] + bounds[1][1]) / 2;
-    scale = .9 / Math.max(dx / width, dy / height);
-    translate = [width / 2 - scale * x, height / 2 - scale * y];
+    const dx = bounds[1][0] - bounds[0][0];
+    const dy = bounds[1][1] - bounds[0][1];
+    const x = (bounds[0][0] + bounds[1][0]) / 2;
+    const y = (bounds[0][1] + bounds[1][1]) / 2;
+    const scale = .9 / Math.max(dx / width, dy / height);
+    const translate = [width / 2 - scale * x, height / 2 - scale * y];
 
     this.g.transition()
       .duration(this.props.animationLength)
