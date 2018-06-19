@@ -5,7 +5,7 @@ import { AnyAction, Dispatch } from 'redux';
 import { setArea } from '../actions/params';
 import Map, { IMapArea } from '../components/Map';
 import './DefaultVersionContainer.css';
-import { IValnattState } from '../store/state';
+import { default as initialState, IValnattState } from '../store/state';
 
 
 interface IDefaultMapContainerProps {
@@ -19,17 +19,19 @@ class DefaultVersionContainer extends React.Component<IDefaultMapContainerProps>
   public render() {
     let areaLabel = 'Hela Sverige';
 
-    if (this.props.currentArea.name !== undefined && this.props.currentArea.name !== 'national') {
+    if (this.props.currentArea.name !== 'national') {
       areaLabel = this.props.currentArea.name;
     }
 
     return (
       <div className="default">
         <Map
+          animationLength={750}
           width={`100vw`}
           height={`calc(100vh - 100px)`}
           dataSourceHost="http://localhost:5000"
           onAreaSelected={this.handleAreaSelection}
+          onReset={this.handleReset}
           area={this.props.currentArea.area || 'national'}
         />
 
@@ -39,6 +41,10 @@ class DefaultVersionContainer extends React.Component<IDefaultMapContainerProps>
       </div>
     );
   }
+
+  private handleReset = () => {
+    this.props.dispatch.setArea(initialState.params.area as IMapArea);
+  };
 
   private handleAreaSelection = (area: IMapArea) => {
     this.props.dispatch.setArea(area);

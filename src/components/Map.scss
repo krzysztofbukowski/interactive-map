@@ -1,27 +1,37 @@
 .map {
+  $transitionLength: 500ms;
+  $fillColor: rgba(0, 0, 0, 1);
+  $strokeColor: rgba(255, 255, 255, 1);
+
   &__background {
     fill: #044658;
   }
 
   &__path {
-    fill: black;
-    stroke: white;
+    fill: $fillColor;
+    stroke: $strokeColor;
     cursor: pointer;
-    transition: opacity 750ms linear;
+    opacity: 1;
+    transition: opacity $transitionLength;
 
     &--active {
-      //fill: dodgerblue;
+      opacity: 1;
+      transition: opacity $transitionLength;
     }
 
     &--inactive {
       opacity: 0;
-      transition: opacity 750ms linear;
+      transition: opacity $transitionLength;
+    }
+
+    &--hidden {
+      display: none;
     }
 
     &--hovered {
       opacity: 1;
       fill: #179bbf;
-      transition: fill 100ms linear;
+      transition: fill 100ms ease-in;
     }
   }
 }

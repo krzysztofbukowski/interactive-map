@@ -5,13 +5,15 @@ import * as topojson from 'topojson';
 import { GeometryCollection, Topology } from 'topojson-specification';
 
 import './Map.css';
-import { Selection } from 'd3-selection';
+import { BaseType, Selection } from 'd3-selection';
 
 interface IMapProps {
   width: string;
   height: string;
+  animationLength: number;
   dataSourceHost: string;
-  onAreaSelected?: (area: IMapArea) => void
+  onAreaSelected?: (area: IMapArea) => void,
+  onReset?: () => void,
   area?: 'national' | string
 }
 
@@ -19,11 +21,35 @@ interface IMapState {
   currentArea: string;
 }
 
-interface IValnattFeatureProperties {
+interface ILanFeatureProperties {
   LAN: string,
   LAN_NAMN: string,
   ID: string
 }
+
+interface IKommunFeatureProperties {
+  KOM: string,
+  NAMN_KOM: string,
+  ID: string
+}
+
+interface IVDFeatureProperties {
+  VD: string,
+  VD_NAMN: string,
+  ID: string
+}
+
+interface IKVKFeatureProperties {
+  KVK: string,
+  KVK_NAMN: string,
+  ID: string
+}
+
+declare type MapFeature =
+  ILanFeatureProperties
+  & IKommunFeatureProperties
+  & IVDFeatureProperties
+  & IKVKFeatureProperties;
 
 export interface IMapArea {
   area: string;
@@ -32,7 +58,7 @@ export interface IMapArea {
 }
 
 interface IMapFeature extends Feature {
-  properties: IValnattFeatureProperties
+  properties: MapFeature
 }
 
 const SWEDEN_CENTER: [number, number] = [15.1, 61.6];
@@ -43,7 +69,6 @@ class Map extends React.Component<IMapProps, IMapState> {
   private swedenProjectionPath: d3.GeoPath;
   private svg: Selection<SVGSVGElement, any, any, undefined>;
   private g: any;
-  private features: {} = {};
 
   constructor(props: IMapProps) {
     super(props);
@@ -87,54 +112,38 @@ class Map extends React.Component<IMapProps, IMapState> {
     fetch(`${this.props.dataSourceHost}/api/topojson/val2014/national/100`)
       .then((response: any) => response.json())
       .then((topology: Topology) => {
-        this.renderMap(svg, topology);
-      })
-      .then(() => {
-        if (this.props.area && this.props.area !== 'national') {
-          const feature = this.features[this.props.area];
-          this.handleAreaSelection(feature);
-        }
+        this.bindEvents(
+          this.renderMap(topology)
+        );
       });
   }
 
-  private renderMap = (svg: Selection<SVGSVGElement, any, any, undefined>, mapData: Topology, key: string = 'national_100') => {
+  private renderMap = (mapData: Topology, key: string = 'national_100') => {
     const featureCollection = topojson.feature(mapData, mapData.objects[key] as GeometryCollection);
 
-    featureCollection.features.map((feature: IMapFeature) => {
-      this.features[`${feature.properties.ID}`] = feature;
-    });
+    const g = this.g.append('g');
+    g.attr('class', `${key} map__g`);
 
-
-    // this.svg.select(`#lan_10`).style('display', 'none');
-
-    this.g.append('g')
-      .selectAll('path')
+    return g.selectAll('path')
       .data(featureCollection.features)
-      .enter().append('path')
+      .enter()
+      .append('path')
       .attr('class', 'map__path')
       .attr('d', (item: any) => this.swedenProjectionPath(item))
-      .attr('id', (item: IMapFeature) => `lan_${item.properties.ID}`);
-
-    const paths = svg.selectAll('path');
-
-    const that = this;
-    paths.on('click', function (feature: IMapFeature) {
-      paths.each(function (f: IMapFeature) {
-        (this as Element).classList.remove('map__path--active');
-        (this as Element).classList.add('map__path--inactive');
-      });
-
-      (this as Element).classList.remove('map__path--inactive');
-      (this as Element).classList.add('map__path--active');
-
-      that.handleAreaSelection(feature);
-    }).on('mouseover', function (feature: IMapFeature) {
-      (this as Element).classList.add('map__path--hovered');
-    }).on('mouseout', function (feature: IMapFeature) {
-      (this as Element).classList.remove('map__path--hovered');
-    });
+      .attr('id', (item: IMapFeature) => `area_${item.properties.ID}`);
   };
 
+  private bindEvents(paths: Selection<BaseType, any, any, undefined>) {
+    const handleAreaSelection = this.handleAreaSelection;
+
+    paths.on('click', function (feature: IMapFeature) {
+      handleAreaSelection(feature, (this as Element));
+    }).on('mouseover', function () {
+      (this as Element).classList.add('map__path--hovered');
+    }).on('mouseout', function () {
+      (this as Element).classList.remove('map__path--hovered');
+    });
+  }
 
   private zoomToFeature = (feature: IMapFeature) => {
     let x: number;
@@ -162,7 +171,7 @@ class Map extends React.Component<IMapProps, IMapState> {
     translate = [width / 2 - scale * x, height / 2 - scale * y];
 
     this.g.transition()
-      .duration(750)
+      .duration(this.props.animationLength)
       .style('stroke-width', `${4 / scale}px`)
       .attr('transform', 'translate(' + translate + ')scale(' + scale + ')');
   };
@@ -171,46 +180,143 @@ class Map extends React.Component<IMapProps, IMapState> {
     this.centeredFeature = undefined;
 
     this.g.transition()
-      .duration(750)
+      .duration(this.props.animationLength)
       .style('stroke-width', '2px')
       .attr('transform', '');
 
-    const svg = d3.select(this.ref);
-    const paths = svg.selectAll('path');
+    const svg = this.svg;
 
-    paths.each(function () {
-      (this as Element).classList.remove('map__path--active', 'map__path--inactive');
-    });
+    svg.selectAll('[class*=lan]').remove();
+    svg.selectAll('[class*=kommun]').remove();
 
-    if (this.props.onAreaSelected) {
-      this.props.onAreaSelected({
-        area: 'national',
-        id: 'national',
-        name: 'national'
+    svg
+      .selectAll('path')
+      .each(function () {
+        const element = (this as Element);
+
+        element.classList.remove('map__path--hidden');
+
+        // without setting timeout the animation won't work
+        setTimeout(() => {
+          element.classList.remove('map__path--inactive', 'map__path--active');
+        }, 0);
       });
+
+    if (this.props.onReset) {
+      this.props.onReset();
     }
   };
 
-  private handleAreaSelection = (feature: IMapFeature) => {
-    const level = feature.properties.ID.length === 2 ? 10 : 1;
-    const key = level === 10 ? `lan_${feature.properties.ID}_${level}` : `kommun_${feature.properties.ID}_${level}`;
+  private handleAreaSelection = (feature: IMapFeature, element: Element) => {
+    const level = this.resolveLevel(feature.properties.ID);
+    const key = this.resolveKey(feature.properties, level);
+
+    if (this.props.onAreaSelected) {
+      this.props.onAreaSelected(this.mapFeatureToArea(feature));
+    }
 
     fetch(`${this.props.dataSourceHost}/api/topojson/val2014/${feature.properties.ID}/${level}`)
       .then((response: Response) => response.json())
       .then((topology: Topology) => {
 
-        this.renderMap(this.svg, topology, key);
-        this.zoomToFeature(feature);
-      });
+        const isError = (topology as object).hasOwnProperty('msg');
 
-    if (this.props.onAreaSelected) {
-      this.props.onAreaSelected({
-        area: feature.properties.LAN,
-        id: feature.properties.ID,
-        name: feature.properties.LAN_NAMN
+        if (!isError) {
+          this.animate(element);
+          this.bindEvents(
+            this.renderMap(topology, key)
+          );
+          this.zoomToFeature(feature);
+        } else {
+          element.classList.remove('map__path--inactive');
+          element.classList.add('map__path--active');
+        }
+      })
+      .catch((reason: any) => {
+        console.error(reason);
       });
-    }
   };
+
+  private resolveKey(properties: MapFeature, level: number) {
+    if (properties.LAN) {
+      return `lan_${properties.ID}_${level}`;
+    }
+
+    if (properties.KOM) {
+      return `kommun_${properties.ID}_${level}`;
+    }
+
+    if (properties.KVK) {
+      return `kommunkrets_${properties.ID}_${level}`;
+    }
+
+    return `kommun_${properties.ID}_${level}`;
+  }
+
+  private resolveLevel(feature: string) {
+    switch (feature.length) {
+      case 2:
+        return 10;
+      case 4:
+        return 1;
+      case 6:
+        return 1;
+      default:
+        return 1;
+    }
+  }
+
+
+  private mapFeatureToArea(feature: IMapFeature): IMapArea {
+    const area: IMapArea = {
+      area: 'national',
+      id: feature.properties.ID,
+      name: 'national'
+    };
+
+    if (feature.properties.LAN) {
+      area.area = feature.properties.LAN;
+      area.name = feature.properties.LAN_NAMN;
+    }
+
+    if (feature.properties.KOM) {
+      area.area = feature.properties.KOM;
+      area.name = feature.properties.NAMN_KOM;
+    }
+
+    if (feature.properties.VD) {
+      area.area = feature.properties.VD;
+      area.name = feature.properties.VD_NAMN;
+    }
+
+    if (feature.properties.KVK) {
+      area.area = feature.properties.KVK;
+      area.name = feature.properties.KVK_NAMN;
+    }
+
+    return area;
+  }
+
+  private animate(element: Element) {
+    if (element.parentElement) {
+      for (let i = 0; i < element.parentElement.children.length; i++) {
+        const child = element.parentElement.children.item(i);
+
+        child.addEventListener(
+          'transitionend',
+          (event: TransitionEvent) => {
+            if (event.propertyName === 'opacity') {
+              child.classList.add('map__path--hidden');
+            }
+          },
+          {
+            once: true
+          });
+
+        child.classList.add('map__path--inactive');
+      }
+    }
+  }
 }
 
 export default Map;
