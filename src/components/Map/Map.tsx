@@ -7,7 +7,7 @@ import { GeometryCollection, Topology } from 'topojson-specification';
 import './Map.css';
 import { BaseType, Selection } from 'd3-selection';
 
-interface IMapProps {
+export interface IMapProps {
   width: string;
   height: string;
   animationLength: number;
@@ -103,7 +103,7 @@ class Map extends React.Component<IMapProps, {}> {
         this.bindEvents(
           this.renderMap(topology)
         );
-      });
+      }).catch(e => console.error(e));
   }
 
   private renderMap = (mapData: Topology, key: string = 'national_100') => {

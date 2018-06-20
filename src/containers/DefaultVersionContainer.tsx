@@ -6,6 +6,7 @@ import { setArea } from '../actions/params';
 import Map, { IMapArea } from '../components/Map/Map';
 import './DefaultVersionContainer.css';
 import { default as initialState, IValnattState } from '../store/state';
+import MapLoader from '../components/Map/MapLoader';
 
 
 interface IDefaultMapContainerProps {
@@ -25,16 +26,19 @@ class DefaultVersionContainer extends React.Component<IDefaultMapContainerProps>
 
     return (
       <div className="default">
-        <Map
-          animationLength={750}
-          width={`100vw`}
-          height={`calc(100vh - 100px)`}
+        <MapLoader
           dataSourceHost="http://localhost:5000"
-          onAreaSelected={this.handleAreaSelection}
-          onReset={this.handleReset}
-          area={this.props.currentArea.area || 'national'}
-        />
-
+        >
+          <Map
+            animationLength={750}
+            width={`100vw`}
+            height={`calc(100vh - 100px)`}
+            dataSourceHost="http://localhost:5000"
+            onAreaSelected={this.handleAreaSelection}
+            onReset={this.handleReset}
+            area={this.props.currentArea.area || 'national'}
+          />
+        </MapLoader>
         <div className="footer">
           {<h2>{areaLabel}</h2>}
         </div>
