@@ -4,7 +4,7 @@ import thunk from 'redux-thunk';
 
 import valnattReducers from '../reducers';
 import initialState, { IValnattState } from './state';
-import { IMapArea } from '../components/Map';
+import { IMapArea } from '../components/Map/Map';
 
 const store = createStore(
   valnattReducers,

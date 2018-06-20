@@ -1,4 +1,4 @@
-import { IMapArea } from '../components/Map';
+import { IMapArea } from '../components/Map/Map';
 
 export interface IParamsState {
   area?: IMapArea

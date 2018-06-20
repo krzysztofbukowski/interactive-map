@@ -1,4 +1,4 @@
-import { IMapArea } from '../components/Map';
+import { IMapArea } from '../components/Map/Map';
 
 export enum PARAMS_ACTIONS {
   SET_AREA = 'SET_AREA'

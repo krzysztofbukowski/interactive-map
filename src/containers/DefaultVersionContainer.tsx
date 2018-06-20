@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 import { AnyAction, Dispatch } from 'redux';
 
 import { setArea } from '../actions/params';
-import Map, { IMapArea } from '../components/Map';
+import Map, { IMapArea } from '../components/Map/Map';
 import './DefaultVersionContainer.css';
 import { default as initialState, IValnattState } from '../store/state';
 
