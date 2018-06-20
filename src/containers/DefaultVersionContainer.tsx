@@ -6,8 +6,6 @@ import { setArea } from '../actions/params';
 import Map, { IMapArea } from '../components/Map/Map';
 import './DefaultVersionContainer.css';
 import { default as initialState, IValnattState } from '../store/state';
-import MapLoader from '../components/Map/MapLoader';
-
 
 interface IDefaultMapContainerProps {
   currentArea: IMapArea;
@@ -26,9 +24,6 @@ class DefaultVersionContainer extends React.Component<IDefaultMapContainerProps>
 
     return (
       <div className="default">
-        <MapLoader
-          dataSourceHost="http://localhost:5000"
-        >
           <Map
             animationLength={750}
             width={`100vw`}
@@ -38,7 +33,7 @@ class DefaultVersionContainer extends React.Component<IDefaultMapContainerProps>
             onReset={this.handleReset}
             area={this.props.currentArea.area || 'national'}
           />
-        </MapLoader>
+        
         <div className="footer">
           {<h2>{areaLabel}</h2>}
         </div>

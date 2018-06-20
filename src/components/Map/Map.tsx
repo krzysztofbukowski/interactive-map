@@ -1,11 +1,12 @@
 import * as d3 from 'd3';
-import { Feature } from 'geojson';
 import * as React from 'react';
 import * as topojson from 'topojson';
 import { GeometryCollection, Topology } from 'topojson-specification';
 
 import './Map.css';
 import { BaseType, Selection } from 'd3-selection';
+import MapDataLoader from './MapDataLoader';
+import { IMapFeature } from './MapFeature';
 
 export interface IMapProps {
   width: string;
@@ -15,37 +16,11 @@ export interface IMapProps {
   onAreaSelected?: (area: IMapArea) => void,
   onReset?: () => void,
   area?: 'national' | string
+  data?: {
+    topology?: Topology,
+    level: string
+  }
 }
-
-interface ILanFeatureProperties {
-  LAN: string,
-  LAN_NAMN: string,
-  ID: string
-}
-
-interface IKommunFeatureProperties {
-  KOM: string,
-  NAMN_KOM: string,
-  ID: string
-}
-
-interface IVDFeatureProperties {
-  VD: string,
-  VD_NAMN: string,
-  ID: string
-}
-
-interface IKVKFeatureProperties {
-  KVK: string,
-  KVK_NAMN: string,
-  ID: string
-}
-
-declare type MapFeature =
-  ILanFeatureProperties
-  & IKommunFeatureProperties
-  & IVDFeatureProperties
-  & IKVKFeatureProperties;
 
 export interface IMapArea {
   area: string;
@@ -53,18 +28,22 @@ export interface IMapArea {
   id: string;
 }
 
-interface IMapFeature extends Feature {
-  properties: MapFeature
-}
-
 const SWEDEN_CENTER: [number, number] = [15.1, 61.6];
 
 class Map extends React.Component<IMapProps, {}> {
   private ref: SVGSVGElement;
   private centeredFeature: IMapFeature | undefined;
+  private centeredElement: Element | undefined;
   private swedenProjectionPath: d3.GeoPath;
   private svg: Selection<SVGSVGElement, any, any, undefined>;
   private g: any;
+  private cancelHover: boolean;
+
+  constructor(props: IMapProps) {
+    super(props);
+
+    this.cancelHover = false;
+  }
 
   public render() {
     return (
@@ -74,6 +53,11 @@ class Map extends React.Component<IMapProps, {}> {
           width={this.props.width}
           height={this.props.height}
           className='map'
+        />
+        <MapDataLoader
+          dataSourceHost={this.props.dataSourceHost}
+          areaCode={this.props.area || 'national'}
+          onDataLoaded={this.onDataLoaded}
         />
       </div>
     );
@@ -96,14 +80,34 @@ class Map extends React.Component<IMapProps, {}> {
       .on('click', this.reset);
 
     this.g = svg.append('g');
+  }
 
-    fetch(`${this.props.dataSourceHost}/api/topojson/val2014/national/100`)
-      .then((response: any) => response.json())
-      .then((topology: Topology) => {
-        this.bindEvents(
-          this.renderMap(topology)
-        );
-      }).catch(e => console.error(e));
+  public componentDidUpdate() {
+    if (this.props.data !== undefined &&
+      this.props.data.topology !== undefined) {
+
+      this.onDataLoaded(
+        this.props.data.topology,
+        this.props.data.level
+      );
+    }
+  }
+
+  private onDataLoaded = (t: Topology, key: string) => {
+    console.info(`Data loaded for key ${key}`, t);
+
+    this.bindEvents(
+      this.renderMap(t, key)
+    );
+
+    if (this.centeredFeature !== undefined) {
+      this.cancelHover = true;
+      this.zoomToFeature(this.centeredFeature);
+    }
+
+    if (this.centeredElement !== undefined) {
+      this.hide(this.centeredElement);
+    }
   }
 
   private renderMap = (mapData: Topology, key: string = 'national_100') => {
@@ -117,53 +121,35 @@ class Map extends React.Component<IMapProps, {}> {
       .enter()
       .append('path')
       .attr('class', 'map__path')
-      .attr('d', (item: any) => this.swedenProjectionPath(item))
+      .attr('d', (item: IMapFeature) => this.swedenProjectionPath(item))
       .attr('id', (item: IMapFeature) => `area_${item.properties.ID}`);
   };
 
   private bindEvents(paths: Selection<BaseType, any, any, undefined>) {
-    const handleAreaSelection = this.handleAreaSelection;
+    const that = this;
 
     paths.on('click', function (feature: IMapFeature) {
-      handleAreaSelection(feature, (this as Element));
+      that.handleAreaSelection(feature, (this as Element));
     }).on('mouseover', function () {
-      (this as Element).classList.add('map__path--hovered');
+      if (!that.cancelHover) {
+        (this as Element).classList.add('map__path--hovered');
+      }
     }).on('mouseout', function () {
-      (this as Element).classList.remove('map__path--hovered');
+        (this as Element).classList.remove('map__path--hovered');
     });
   }
 
-  private zoomToFeature = (feature: IMapFeature) => {
-    const width = this.ref.width.animVal.value;
-    const height = this.ref.height.animVal.value;
-
-    if (feature && this.centeredFeature !== feature) {
-      this.centeredFeature = feature;
-    } else {
-      this.centeredFeature = undefined;
-    }
-
-    const bounds = this.swedenProjectionPath.bounds(feature);
-    const dx = bounds[1][0] - bounds[0][0];
-    const dy = bounds[1][1] - bounds[0][1];
-    const x = (bounds[0][0] + bounds[1][0]) / 2;
-    const y = (bounds[0][1] + bounds[1][1]) / 2;
-    const scale = .9 / Math.max(dx / width, dy / height);
-    const translate = [width / 2 - scale * x, height / 2 - scale * y];
-
-    this.g.transition()
-      .duration(this.props.animationLength)
-      .style('stroke-width', `${4 / scale}px`)
-      .attr('transform', 'translate(' + translate + ')scale(' + scale + ')');
-  };
-
   private reset = (a: any) => {
     this.centeredFeature = undefined;
+    this.centeredElement = undefined;
 
     this.g.transition()
       .duration(this.props.animationLength)
       .style('stroke-width', '2px')
-      .attr('transform', '');
+      .attr('transform', '')
+      .on('end', () => {
+        this.cancelHover = false;
+      });
 
     const svg = this.svg;
 
@@ -189,99 +175,46 @@ class Map extends React.Component<IMapProps, {}> {
   };
 
   private handleAreaSelection = (feature: IMapFeature, element: Element) => {
-    const level = this.resolveLevel(feature.properties.ID);
-    const key = this.resolveKey(feature.properties, level);
-
     if (this.props.onAreaSelected) {
-      this.props.onAreaSelected(this.mapFeatureToArea(feature));
+      this.props.onAreaSelected(mapFeatureToArea(feature));
     }
 
-    fetch(`${this.props.dataSourceHost}/api/topojson/val2014/${feature.properties.ID}/${level}`)
-      .then((response: Response) => response.json())
-      .then((topology: Topology) => {
+    if (feature && this.centeredFeature !== feature) {
+      this.centeredFeature = feature;
+      this.centeredElement = element;
+    } else {
+      this.centeredFeature = undefined;
+      this.centeredElement = undefined;
+    }
+  };
 
-        const isError = (topology as object).hasOwnProperty('msg');
+  private zoomToFeature = (feature: IMapFeature) => {
+    const width = this.ref.width.animVal.value;
+    const height = this.ref.height.animVal.value;
 
-        if (!isError) {
-          this.animate(element);
-          this.bindEvents(
-            this.renderMap(topology, key)
-          );
-          this.zoomToFeature(feature);
-        } else {
-          element.classList.remove('map__path--inactive');
-          element.classList.add('map__path--active');
-        }
-      })
-      .catch((reason: any) => {
-        console.error(reason);
+    const bounds = this.swedenProjectionPath.bounds(feature);
+    const dx = bounds[1][0] - bounds[0][0];
+    const dy = bounds[1][1] - bounds[0][1];
+    const x = (bounds[0][0] + bounds[1][0]) / 2;
+    const y = (bounds[0][1] + bounds[1][1]) / 2;
+    const scale = .9 / Math.max(dx / width, dy / height);
+    const translate = [width / 2 - scale * x, height / 2 - scale * y];
+
+    this.g.transition()
+      .duration(this.props.animationLength)
+      .style('stroke-width', `${4 / scale}px`)
+      .attr('transform', 'translate(' + translate + ')scale(' + scale + ')')
+      .on('end', () => {
+        this.cancelHover = false;
       });
   };
 
-  private resolveKey(properties: MapFeature, level: number) {
-    if (properties.LAN) {
-      return `lan_${properties.ID}_${level}`;
-    }
-
-    if (properties.KOM) {
-      return `kommun_${properties.ID}_${level}`;
-    }
-
-    if (properties.KVK) {
-      return `kommunkrets_${properties.ID}_${level}`;
-    }
-
-    return `kommun_${properties.ID}_${level}`;
-  }
-
-  private resolveLevel(feature: string) {
-    switch (feature.length) {
-      case 2:
-        return 10;
-      case 4:
-        return 1;
-      case 6:
-        return 1;
-      default:
-        return 1;
-    }
-  }
-
-
-  private mapFeatureToArea(feature: IMapFeature): IMapArea {
-    const area: IMapArea = {
-      area: 'national',
-      id: feature.properties.ID,
-      name: 'national'
-    };
-
-    if (feature.properties.LAN) {
-      area.area = feature.properties.LAN;
-      area.name = feature.properties.LAN_NAMN;
-    }
-
-    if (feature.properties.KOM) {
-      area.area = feature.properties.KOM;
-      area.name = feature.properties.NAMN_KOM;
-    }
-
-    if (feature.properties.VD) {
-      area.area = feature.properties.VD;
-      area.name = feature.properties.VD_NAMN;
-    }
-
-    if (feature.properties.KVK) {
-      area.area = feature.properties.KVK;
-      area.name = feature.properties.KVK_NAMN;
-    }
-
-    return area;
-  }
-
-  private animate(element: Element) {
+  private hide(element: Element) {
     if (element.parentElement) {
-      for (let i = 0; i < element.parentElement.children.length; i++) {
-        const child = element.parentElement.children.item(i);
+      const children = element.parentElement.children;
+
+      for (let i = 0; i < children.length; i++) {
+        const child = children.item(i);
 
         child.addEventListener(
           'transitionend',
@@ -298,6 +231,36 @@ class Map extends React.Component<IMapProps, {}> {
       }
     }
   }
+}
+
+function mapFeatureToArea(feature: IMapFeature): IMapArea {
+  const area: IMapArea = {
+    area: 'national',
+    id: feature.properties.ID,
+    name: 'national'
+  };
+
+  if (feature.properties.LAN) {
+    area.area = feature.properties.LAN;
+    area.name = feature.properties.LAN_NAMN;
+  }
+
+  if (feature.properties.KOM) {
+    area.area = feature.properties.KOM;
+    area.name = feature.properties.NAMN_KOM;
+  }
+
+  if (feature.properties.VD) {
+    area.area = feature.properties.VD;
+    area.name = feature.properties.VD_NAMN;
+  }
+
+  if (feature.properties.KVK) {
+    area.area = feature.properties.KVK;
+    area.name = feature.properties.KVK_NAMN;
+  }
+
+  return area;
 }
 
 export default Map;
