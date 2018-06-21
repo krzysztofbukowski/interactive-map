@@ -1,49 +1,116 @@
 import * as React from 'react';
-import { Topology } from 'topojson-specification';
+import utils from '../../utils/utils';
+import { ITopology } from './Map';
 
 interface IMapLoaderProps {
   dataSourceHost: string;
   areaCode: string;
-  onDataLoaded: (topology: Topology, key: string) => void
+  onDataLoaded: (topology: ITopology, areaId: string) => void;
+  onDataLoadCompleted: () => void;
+  delay: number
 }
 
-
-class MapDataLoader extends React.Component<IMapLoaderProps, {}> {
-
-  constructor(props: IMapLoaderProps) {
-    super(props);
-  }
+class MapDataLoader extends React.Component<IMapLoaderProps> {
 
   public render() {
     return null;
   }
 
   public componentDidMount() {
-    this.fetchData(`${this.props.dataSourceHost}/api/topojson/val2014/national/100`);
+    this.fetchDataForArea('national', 100)
+      .then(this.nationalDataFetched.bind(this))
+      .then(this.tryToFetchLanData.bind(this))
+      .then(this.tryToFetchKommunData.bind(this))
+      .then(this.tryToFetchValkretsData.bind(this))
+      .catch(this.props.onDataLoadCompleted);
   }
 
-  public componentDidUpdate() {
-    if (this.props.areaCode === 'national') {
+  public componentDidUpdate(prevProps: IMapLoaderProps) {
+    if (prevProps.areaCode === this.props.areaCode) {
       return;
     }
 
     const level = this.resolveLevel(this.props.areaCode);
-    this.fetchData(`${this.props.dataSourceHost}/api/topojson/val2014/${this.props.areaCode}/${level}`);
+    this.fetchDataForArea(this.props.areaCode, level);
   }
 
-  private fetchData(url: string) {
-    fetch(url)
+  private fetchDataForArea(areaCode: string, level: number): Promise<any> {
+    const url = `${this.props.dataSourceHost}/api/topojson/val2014/${areaCode}/${level}`;
+    return fetch(url)
       .then((response: any) => response.json())
-      .then((topology: Topology) => {
+      .then((topology: ITopology) => {
         if (topology.objects) {
-          const key = Object.keys(topology.objects)[0];
-          this.props.onDataLoaded(topology, key);
+          this.props.onDataLoaded(topology, areaCode);
         }
+
+        return topology;
       }).catch(e => {
         console.info(`Failed loading data from ${url}`);
         console.error(e);
       });
   }
+
+  private nationalDataFetched(topolog: ITopology): Promise<string | undefined> {
+    if (this.props.areaCode === 'national') {
+      return Promise.reject(undefined);
+    }
+    return Promise.resolve(this.props.areaCode.substr(0, 2));
+  }
+
+  private tryToFetchLanData(lanCode: string) {
+    return utils.delay(this.props.delay)
+      .then(() => {
+        return this.fetchDataForArea(lanCode, 10)
+          .then((data: ITopology) => {
+            const kommunCode = this.props.areaCode.substr(0, 4);
+
+            if (kommunCode.length === 4) {
+              return Promise.resolve(kommunCode)
+            } else {
+              return Promise.reject(undefined);
+            }
+          });
+      })
+      .catch(() => {
+        return Promise.reject(undefined);
+      });
+  };
+
+  private tryToFetchKommunData(kommunCode: string): Promise<string | undefined> {
+    return utils.delay(this.props.delay)
+      .then(() => {
+        return this.fetchDataForArea(kommunCode, 1)
+        .then((data: ITopology) => {
+          const valkretsCode = this.props.areaCode.substr(0, 6);
+
+          if (valkretsCode.length === 6) {
+            return Promise.resolve(valkretsCode)
+          } else {
+            return Promise.reject(undefined);
+          }
+          return Promise.reject(undefined);
+        })
+      })
+      .catch(() => {
+        return Promise.reject(undefined);
+      });
+  }
+
+  private tryToFetchValkretsData(kommunCode: string): Promise<string | undefined> {
+    return utils.delay(this.props.delay)
+      .then(() => {
+        return this.fetchDataForArea(kommunCode, 1)
+        .then((data: ITopology) => {
+          /**
+           * Handle loading data for valdistrikt
+           */
+          return Promise.reject(undefined);
+        })
+      })
+      .catch(() => {
+        return Promise.reject(undefined);
+      });
+  }  
 
   private resolveLevel(feature: string) {
     switch (feature.length) {

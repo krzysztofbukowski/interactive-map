@@ -13,13 +13,18 @@ export interface IMapProps {
   height: string;
   animationLength: number;
   dataSourceHost: string;
-  onAreaSelected?: (area: IMapArea) => void,
+  onAreaClicked?: (area: IMapArea) => void,
+  onAreaChanged?: (area: IMapArea) => void,
   onReset?: () => void,
-  area?: 'national' | string
+  area: 'national' | string
   data?: {
-    topology?: Topology,
+    topology?: ITopology,
     level: string
   }
+}
+
+export interface ITopology extends Topology {
+  key: string;
 }
 
 export interface IMapArea {
@@ -33,7 +38,7 @@ const SWEDEN_CENTER: [number, number] = [15.1, 61.6];
 class Map extends React.Component<IMapProps, {}> {
   private ref: SVGSVGElement;
   private centeredFeature: IMapFeature | undefined;
-  private centeredElement: Element | undefined;
+  private centeredElement: Element | null;
   private swedenProjectionPath: d3.GeoPath;
   private svg: Selection<SVGSVGElement, any, any, undefined>;
   private g: any;
@@ -58,6 +63,8 @@ class Map extends React.Component<IMapProps, {}> {
           dataSourceHost={this.props.dataSourceHost}
           areaCode={this.props.area || 'national'}
           onDataLoaded={this.onDataLoaded}
+          onDataLoadCompleted={this.onDataLoadCompleted}
+          delay={750}
         />
       </div>
     );
@@ -82,39 +89,38 @@ class Map extends React.Component<IMapProps, {}> {
     this.g = svg.append('g');
   }
 
-  public componentDidUpdate() {
-    if (this.props.data !== undefined &&
-      this.props.data.topology !== undefined) {
-
-      this.onDataLoaded(
-        this.props.data.topology,
-        this.props.data.level
-      );
-    }
-  }
-
-  private onDataLoaded = (t: Topology, key: string) => {
-    console.info(`Data loaded for key ${key}`, t);
+  private onDataLoaded = (topology: ITopology, areaId: string) => {
+    console.info(`Data loaded for area ${areaId}`, topology);
 
     this.bindEvents(
-      this.renderMap(t, key)
+      this.renderMap(topology)
     );
+
+    this.centeredElement = document.querySelector(`#area_${areaId}`);
+    this.centeredFeature = d3.select(`#area_${areaId}`).data()[0] as IMapFeature;
 
     if (this.centeredFeature !== undefined) {
       this.cancelHover = true;
       this.zoomToFeature(this.centeredFeature);
+      if (this.props.onAreaChanged) {
+        this.props.onAreaChanged(mapFeatureToArea(this.centeredFeature));
+      }
     }
 
-    if (this.centeredElement !== undefined) {
+    if (this.centeredElement !== null) {
       this.hide(this.centeredElement);
     }
   }
 
-  private renderMap = (mapData: Topology, key: string = 'national_100') => {
-    const featureCollection = topojson.feature(mapData, mapData.objects[key] as GeometryCollection);
+  private onDataLoadCompleted = () => {
+    console.log('Finished');
+  }
+
+  private renderMap = (topology: ITopology) => {
+    const featureCollection = topojson.feature(topology, topology.objects[topology.key] as GeometryCollection);
 
     const g = this.g.append('g');
-    g.attr('class', `${key} map__g`);
+    g.attr('class', `${topology.key} map__g`);
 
     return g.selectAll('path')
       .data(featureCollection.features)
@@ -128,20 +134,25 @@ class Map extends React.Component<IMapProps, {}> {
   private bindEvents(paths: Selection<BaseType, any, any, undefined>) {
     const that = this;
 
-    paths.on('click', function (feature: IMapFeature) {
-      that.handleAreaSelection(feature, (this as Element));
-    }).on('mouseover', function () {
+    paths.on('click', (feature: IMapFeature) => {
+      if (this.props.onAreaClicked) {
+        this.props.onAreaClicked(mapFeatureToArea(feature));
+      }
+    }).on('mouseenter', function () {
       if (!that.cancelHover) {
         (this as Element).classList.add('map__path--hovered');
       }
-    }).on('mouseout', function () {
-        (this as Element).classList.remove('map__path--hovered');
+    }).on('mouseleave', function () {
+      (this as Element).classList.remove('map__path--hovered');
     });
   }
 
   private reset = (a: any) => {
+    if (this.centeredFeature === undefined) {
+      return; 
+    }
     this.centeredFeature = undefined;
-    this.centeredElement = undefined;
+    this.centeredElement = null;
 
     this.g.transition()
       .duration(this.props.animationLength)
@@ -169,22 +180,16 @@ class Map extends React.Component<IMapProps, {}> {
         }, 0);
       });
 
+    if (this.props.onAreaChanged) {
+      this.props.onAreaChanged({
+        area: 'national',
+        id: 'national',
+        name: 'national'
+      });
+    }
+
     if (this.props.onReset) {
       this.props.onReset();
-    }
-  };
-
-  private handleAreaSelection = (feature: IMapFeature, element: Element) => {
-    if (this.props.onAreaSelected) {
-      this.props.onAreaSelected(mapFeatureToArea(feature));
-    }
-
-    if (feature && this.centeredFeature !== feature) {
-      this.centeredFeature = feature;
-      this.centeredElement = element;
-    } else {
-      this.centeredFeature = undefined;
-      this.centeredElement = undefined;
     }
   };
 

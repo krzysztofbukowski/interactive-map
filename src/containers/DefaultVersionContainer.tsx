@@ -29,11 +29,12 @@ class DefaultVersionContainer extends React.Component<IDefaultMapContainerProps>
             width={`100vw`}
             height={`calc(100vh - 100px)`}
             dataSourceHost="http://localhost:5000"
-            onAreaSelected={this.handleAreaSelection}
+            onAreaClicked={this.handleAreaClick}
+            onAreaChanged={this.handleAreaChanged}
             onReset={this.handleReset}
             area={this.props.currentArea.area || 'national'}
           />
-        
+
         <div className="footer">
           {<h2>{areaLabel}</h2>}
         </div>
@@ -45,9 +46,20 @@ class DefaultVersionContainer extends React.Component<IDefaultMapContainerProps>
     this.props.dispatch.setArea(initialState.params.area as IMapArea);
   };
 
-  private handleAreaSelection = (area: IMapArea) => {
+  private handleAreaClick = (area: IMapArea) => {
     this.props.dispatch.setArea(area);
   };
+
+  private handleAreaChanged = (currentArea: IMapArea) => {
+    console.log('Current area', currentArea);
+    const newArea: IMapArea = {
+      ...currentArea,
+      area: this.props.currentArea.area,
+      id: this.props.currentArea.id
+    };
+
+    this.props.dispatch.setArea(newArea);
+  }
 }
 
 const mapStateToProps = (state: IValnattState) => {
