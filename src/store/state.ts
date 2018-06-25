@@ -1,7 +1,5 @@
-import { IMapArea } from '../components/Map/Map';
-
 export interface IParamsState {
-  area?: IMapArea
+  area: string
 }
 
 export interface IValnattState {
@@ -10,11 +8,7 @@ export interface IValnattState {
 
 const initialState: IValnattState = {
   params: {
-    area: {
-      area: 'national',
-      id: '',
-      name: 'national'
-    }
+    area: 'national'
   }
 };
 

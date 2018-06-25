@@ -8,20 +8,29 @@ import './DefaultVersionContainer.css';
 import { default as initialState, IValnattState } from '../store/state';
 
 interface IDefaultMapContainerProps {
-  currentArea: IMapArea;
+  currentAreaId: string;
   dispatch: {
-    setArea: (area: IMapArea) => any
+    setArea: (area: string) => any
   }
 }
 
-class DefaultVersionContainer extends React.Component<IDefaultMapContainerProps> {
+interface IDefaultMapContainerState {
+  currentAreaName: string;
+}
+
+const DEFAULT_AREA_NAME = 'Hela Sverige';
+
+class DefaultVersionContainer extends React.Component<IDefaultMapContainerProps, IDefaultMapContainerState> {
+
+  constructor(props: IDefaultMapContainerProps) {
+    super(props);
+
+    this.state = {
+      currentAreaName: DEFAULT_AREA_NAME
+    };
+  }
+
   public render() {
-    let areaLabel = 'Hela Sverige';
-
-    if (this.props.currentArea.name !== 'national') {
-      areaLabel = this.props.currentArea.name;
-    }
-
     return (
       <div className="default">
           <Map
@@ -32,46 +41,52 @@ class DefaultVersionContainer extends React.Component<IDefaultMapContainerProps>
             onAreaClicked={this.handleAreaClick}
             onAreaChanged={this.handleAreaChanged}
             onReset={this.handleReset}
-            area={this.props.currentArea.area || 'national'}
+            area={this.props.currentAreaId || 'national'}
           />
 
         <div className="footer">
-          {<h2>{areaLabel}</h2>}
+          {<h2>{this.state.currentAreaName}</h2>}
         </div>
       </div>
     );
   }
 
   private handleReset = () => {
-    this.props.dispatch.setArea(initialState.params.area as IMapArea);
+    this.props.dispatch.setArea(initialState.params.area);
+    this.setState({
+      currentAreaName: DEFAULT_AREA_NAME
+    });
   };
 
   private handleAreaClick = (area: IMapArea) => {
-    this.props.dispatch.setArea(area);
+    this.props.dispatch.setArea(area.id);
+
+    this.setState({
+      currentAreaName: area.name
+    });    
   };
 
   private handleAreaChanged = (currentArea: IMapArea) => {
-    console.log('Current area', currentArea);
-    const newArea: IMapArea = {
-      ...currentArea,
-      area: this.props.currentArea.area,
-      id: this.props.currentArea.id
-    };
+    console.log(currentArea, this.props.currentAreaId);
 
-    this.props.dispatch.setArea(newArea);
+    this.props.dispatch.setArea(this.props.currentAreaId);
+
+    this.setState({
+      currentAreaName: currentArea.name
+    });
   }
 }
 
 const mapStateToProps = (state: IValnattState) => {
   return {
-    currentArea: state.params.area
+    currentAreaId: state.params.area,
   };
 };
 
 function mapDispatchToProps(dispatch: Dispatch<AnyAction>) {
   return {
     dispatch: {
-      setArea: (area: IMapArea) => dispatch(setArea(area))
+      setArea: (area: string) => dispatch(setArea(area))
     }
   };
 }

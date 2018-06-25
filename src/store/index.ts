@@ -4,7 +4,6 @@ import thunk from 'redux-thunk';
 
 import valnattReducers from '../reducers';
 import initialState, { IValnattState } from './state';
-import { IMapArea } from '../components/Map/Map';
 
 const store = createStore(
   valnattReducers,
@@ -19,14 +18,8 @@ ReduxQuerySync({
       action: (value: string) => ({type: 'SET_AREA', payload: value}),
       defaultValue: 'national',
       selector: (state: IValnattState) => state.params.area,
-      stringToValue: (s: string): IMapArea => {
-        return {
-          area: s ? s : 'national',
-          id: s,
-          name: 'national'
-        }
-      },
-      valueToString: (value: IMapArea) => value.id ? `${value.id}` : 'national'
+      stringToValue: (area: string)  => `${area}`,
+      valueToString: (area: string) => area ? `${area}` : 'national'
     },
   },
   replaceState: true,
