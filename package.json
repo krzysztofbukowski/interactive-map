@@ -29,6 +29,7 @@
     "node-sass-chokidar": "^1.3.0",
     "typescript": "^2.9.1"
   },
+  "proxy": "http://localhost:3000/",
   "scripts": {
     "build": "react-scripts-ts build",
     "build-css": "node-sass-chokidar src/ -o src/",
