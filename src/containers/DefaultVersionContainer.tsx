@@ -67,8 +67,6 @@ class DefaultVersionContainer extends React.Component<IDefaultMapContainerProps,
   };
 
   private handleAreaChanged = (currentArea: IMapArea) => {
-    console.log(currentArea, this.props.currentAreaId);
-
     this.props.dispatch.setArea(this.props.currentAreaId);
 
     this.setState({
