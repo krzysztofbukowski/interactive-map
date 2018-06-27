@@ -1,5 +1,5 @@
 export interface IParamsState {
-  area?: string
+  area: string
 }
 
 export interface IValnattState {
@@ -7,7 +7,9 @@ export interface IValnattState {
 }
 
 const initialState: IValnattState = {
-  params: {}
+  params: {
+    area: 'national'
+  }
 };
 
 export default initialState;

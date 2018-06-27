@@ -7,7 +7,7 @@ export const params = (state: IParamsState = initialState.params, action: AnyAct
       return {
         ...state,
         area: action.payload
-      };
+      }
     default:
       return state;
   }

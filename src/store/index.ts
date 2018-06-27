@@ -18,8 +18,8 @@ ReduxQuerySync({
       action: (value: string) => ({type: 'SET_AREA', payload: value}),
       defaultValue: 'national',
       selector: (state: IValnattState) => state.params.area,
-      stringToValue: (s: string) => s,
-      valueToString: (value: any) => `${value}`
+      stringToValue: (area: string)  => `${area}`,
+      valueToString: (area: string) => area ? `${area}` : 'national'
     },
   },
   replaceState: true,
