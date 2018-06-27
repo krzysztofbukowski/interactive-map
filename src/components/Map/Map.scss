@@ -17,6 +17,7 @@
     &--active {
       opacity: 1;
       transition: opacity $transitionLength;
+      fill: coral;
     }
 
     &--inactive {
