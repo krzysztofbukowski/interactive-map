@@ -164,6 +164,7 @@ class Map extends React.Component<IMapProps, {}> {
 
     const svg = this.svg;
 
+    svg.selectAll('[class*=national]').remove();
     svg.selectAll('[class*=lan]').remove();
     svg.selectAll('[class*=kommun]').remove();
 
@@ -179,14 +180,6 @@ class Map extends React.Component<IMapProps, {}> {
           element.classList.remove('map__path--inactive', 'map__path--active');
         }, 0);
       });
-
-    if (this.props.onAreaChanged) {
-      this.props.onAreaChanged({
-        area: 'national',
-        id: 'national',
-        name: 'national'
-      });
-    }
 
     if (this.props.onReset) {
       this.props.onReset();
@@ -214,7 +207,7 @@ class Map extends React.Component<IMapProps, {}> {
       });
   };
 
-  private hide(element: Element) {
+  private hide(element: Element) {    
     if (element.parentElement) {
       const children = element.parentElement.children;
 
@@ -231,7 +224,6 @@ class Map extends React.Component<IMapProps, {}> {
           {
             once: true
           });
-
         child.classList.add('map__path--inactive');
       }
     }
