@@ -33,16 +33,15 @@ export interface IMapArea {
   id: string;
 }
 
-const SWEDEN_CENTER: [number, number] = [15.1, 61.6];
-
 class Map extends React.Component<IMapProps, {}> {
   private ref: SVGSVGElement;
   private centeredFeature: IMapFeature | undefined;
   private centeredElement: Element | null;
-  private swedenProjectionPath: d3.GeoPath;
+  private projectionPath: d3.GeoPath;
   private svg: Selection<SVGSVGElement, any, any, undefined>;
   private g: any;
   private cancelHover: boolean;
+  private nationalData: any;
 
   constructor(props: IMapProps) {
     super(props);
@@ -55,8 +54,7 @@ class Map extends React.Component<IMapProps, {}> {
       <div>
         <svg
           ref={(ref: SVGSVGElement) => this.ref = ref}
-          width={this.props.width}
-          height={this.props.height}
+          style={{width: this.props.width, height: this.props.height}}
           className='map'
         />
         <MapDataLoader
@@ -74,30 +72,30 @@ class Map extends React.Component<IMapProps, {}> {
     const svg = d3.select(this.ref);
     this.svg = svg;
 
-    const swedenProjection = d3.geoConicEqualArea()
-      .scale(this.ref.height.animVal.value * 3.5)
-      .center(SWEDEN_CENTER)
-      .translate([this.ref.width.animVal.value / 2, this.ref.height.animVal.value / 2]);
-    this.swedenProjectionPath = d3.geoPath(swedenProjection);
-
     svg.append('rect')
       .attr('class', 'map__background')
-      .attr('width', this.ref.width.animVal.value)
-      .attr('height', this.ref.height.animVal.value)
+      .style('width','100%')
+      .style('height', '100%')
       .on('click', this.reset);
 
     this.g = svg.append('g');
   }
 
   private onDataLoaded = (topology: ITopology, areaId: string) => {
-    console.info(`Data loaded for area ${areaId}`, topology);
+    console.info(`Topology loaded for area ${areaId}`, topology);
+
+    const featureCollection = topojson.feature(topology, topology.objects[topology.key] as GeometryCollection)
+
+    if (areaId === 'national') {
+      this.nationalData = featureCollection;
+    }
 
     this.bindEvents(
-      this.renderMap(topology)
+      this.renderMap(featureCollection, topology.key)
     );
 
-    this.centeredElement = document.querySelector(`#area_${areaId}`);
-    this.centeredFeature = d3.select(`#area_${areaId}`).data()[0] as IMapFeature;
+    this.centeredElement = this.findElementByAreaCode(areaId);
+    this.centeredFeature = this.findFeatureByAreaCode(areaId);
 
     if (this.centeredFeature !== undefined) {
       this.cancelHover = true;
@@ -112,22 +110,40 @@ class Map extends React.Component<IMapProps, {}> {
     }
   }
 
-  private onDataLoadCompleted = () => {
-    console.log('Finished');
+  private onDataLoadCompleted = (areaCode: string) => {
+    this.centeredElement = this.findElementByAreaCode(areaCode);
+    this.centeredFeature = this.findFeatureByAreaCode(areaCode);
+
+    if (this.centeredFeature !== undefined) {
+      if (this.props.onAreaChanged) {
+        this.props.onAreaChanged(mapFeatureToArea(this.centeredFeature));
+      }
+    }
   }
 
-  private renderMap = (topology: ITopology) => {
-    const featureCollection = topojson.feature(topology, topology.objects[topology.key] as GeometryCollection);
+  private findElementByAreaCode(areaCode: string): Element | null {
+    return document.querySelector(`#area_${areaCode}`);
+  }
+
+  private findFeatureByAreaCode(areaCode: string): IMapFeature {
+    return d3.select(`#area_${areaCode}`).data()[0] as IMapFeature;
+  }
+
+  private renderMap = (featureCollection: any, key: string) => {
+    const swedenProjection = d3.geoConicEqualArea()
+      .fitSize([this.ref.width.animVal.value, this.ref.height.animVal.value], this.nationalData)
+
+    this.projectionPath = d3.geoPath(swedenProjection);
 
     const g = this.g.append('g');
-    g.attr('class', `${topology.key} map__g`);
+    g.attr('class', `${key} map__g`);
 
     return g.selectAll('path')
       .data(featureCollection.features)
       .enter()
       .append('path')
       .attr('class', 'map__path')
-      .attr('d', (item: IMapFeature) => this.swedenProjectionPath(item))
+      .attr('d', (item: IMapFeature) => this.projectionPath(item))
       .attr('id', (item: IMapFeature) => `area_${item.properties.ID}`);
   };
 
@@ -149,7 +165,7 @@ class Map extends React.Component<IMapProps, {}> {
 
   private reset = (a: any) => {
     if (this.centeredFeature === undefined) {
-      return; 
+      return;
     }
     this.centeredFeature = undefined;
     this.centeredElement = null;
@@ -190,7 +206,7 @@ class Map extends React.Component<IMapProps, {}> {
     const width = this.ref.width.animVal.value;
     const height = this.ref.height.animVal.value;
 
-    const bounds = this.swedenProjectionPath.bounds(feature);
+    const bounds = this.projectionPath.bounds(feature);
     const dx = bounds[1][0] - bounds[0][0];
     const dy = bounds[1][1] - bounds[0][1];
     const x = (bounds[0][0] + bounds[1][0]) / 2;
@@ -207,7 +223,7 @@ class Map extends React.Component<IMapProps, {}> {
       });
   };
 
-  private hide(element: Element) {    
+  private hide(element: Element) {
     if (element.parentElement) {
       const children = element.parentElement.children;
 

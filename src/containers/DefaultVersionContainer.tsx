@@ -63,7 +63,7 @@ class DefaultVersionContainer extends React.Component<IDefaultMapContainerProps,
 
     this.setState({
       currentAreaName: area.name
-    });    
+    });
   };
 
   private handleAreaChanged = (currentArea: IMapArea) => {

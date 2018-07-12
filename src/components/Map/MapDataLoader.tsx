@@ -1,17 +1,19 @@
 import * as React from 'react';
 import utils from '../../utils/utils';
 import { ITopology } from './Map';
-import {MapDataLevels, AREA_CODE_NATIONAL} from './MapDataLevels';
+import { MapDataLevels, AREA_CODE_NATIONAL } from './MapDataLevels';
 
 interface IMapLoaderProps {
   dataSourceHost: string;
   areaCode: string;
   onDataLoaded: (topology: ITopology, areaId: string) => void;
-  onDataLoadCompleted: () => void;
+  onDataLoadCompleted: (areaCode: string) => void;
   delay: number
 }
 
 class MapDataLoader extends React.Component<IMapLoaderProps> {
+
+  private cache: any = {};
 
   public render() {
     return null;
@@ -22,7 +24,9 @@ class MapDataLoader extends React.Component<IMapLoaderProps> {
       .then(this.tryToFetchCountyData)
       .then(this.tryToFetchMunicipalityData)
       .then(this.tryToFetchDistrictData)
-      .catch(this.props.onDataLoadCompleted);
+      .catch((e) => {
+        this.props.onDataLoadCompleted(this.props.areaCode)
+      });
   }
 
   public componentDidUpdate(prevProps: IMapLoaderProps) {
@@ -37,18 +41,29 @@ class MapDataLoader extends React.Component<IMapLoaderProps> {
   private fetchDataForArea = (areaCode: string, level: number, delay: number): Promise<any> => {
     return utils.delay(delay).then(() => {
       const url = `${this.props.dataSourceHost}/api/topojson/val2014/${areaCode}/${level}`;
+      console.log(`Fetching data for ${url}`);
+
+      if (this.cache.hasOwnProperty(url)) {
+        const topology = this.cache[url];
+        this.props.onDataLoaded(topology, areaCode || '');
+        return Promise.resolve(topology);
+      }
 
       return fetch(url)
         .then((response: any) => response.json())
-        .then((topology: ITopology) => {
-          if (topology.objects) {
-            this.props.onDataLoaded(topology, areaCode || '');
+        .then((jsonResponse: any) => {
+          if (jsonResponse.hasOwnProperty('msg')) {
+            throw new Error(jsonResponse.msg);
           }
 
-          return topology;
+          return jsonResponse;
+        })
+        .then((topology: ITopology) => {
+            this.props.onDataLoaded(topology, areaCode || '');
         }).catch(e => {
           console.info(`Failed loading data from ${url}`);
-          console.error(e);
+          console.log(e);
+          // this.props.onDataLoadCompleted();
         });
     })
   }
@@ -74,7 +89,10 @@ class MapDataLoader extends React.Component<IMapLoaderProps> {
   private tryToFetchDistrictData = () => {
     return this.resolveDistrictCode()
       .then((districtCode: string) => {
-        return this.fetchDataForArea(districtCode, MapDataLevels.DISTRICT, this.props.delay);
+        return this.fetchDataForArea(districtCode, MapDataLevels.DISTRICT, this.props.delay)
+          .then((e: any) => {
+            return Promise.reject(undefined);
+          });
       });
   }
 
@@ -121,8 +139,8 @@ class MapDataLoader extends React.Component<IMapLoaderProps> {
             const foundResult = Object.keys(data.kommun_kretsar).find((key: any) => {
               const result = Object.keys(data.kommun_kretsar[key].valdistrikt)
                 .find(districtCode => districtCode === this.props.areaCode);
-              
-                return result !== undefined;
+
+              return result !== undefined;
             });
 
             if (foundResult !== undefined) {
