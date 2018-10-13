@@ -54,7 +54,11 @@ class Map extends React.Component<IMapProps, {}> {
       <>
         <svg
           ref={(ref: SVGSVGElement) => this.ref = ref}
-          style={{width: this.props.width, height: this.props.height}}
+          style={{
+            height: this.props.height,
+            padding: '100px',
+            width: this.props.width
+          }}
           className='map'
         />
         <MapDataLoader
