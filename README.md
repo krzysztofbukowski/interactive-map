@@ -1,10 +1,12 @@
-This project was bootstrapped with [Create React App](https://github.com/facebookincubator/create-react-app).
+# Interactive map
 
-This is a valnatt PoC app using React and d3.js.
+This is an interactive map of Sweden app built with React and d3.js. Click on a region to explore all subregions. Click outside the map to zoom out.
+
+![test](https://user-images.githubusercontent.com/1167335/46909832-34c1c600-cf39-11e8-89d8-c5d22237f02e.png)
 
 ### Available Scripts
 
-In the project directory, you can run:
+This project was bootstraped with create-react-app tool so it uses some of the default npm scripts which come with it:
 
 #### `npm start-dev`
 
