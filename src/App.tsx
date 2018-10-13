@@ -8,7 +8,7 @@ import TvVersionContainer from './containers/TvVersionContainer';
 class App extends React.Component {
   public render() {
     return (
-      <div>
+      <>
         <Route
           path="/tv"
           isExact={true}
@@ -19,7 +19,7 @@ class App extends React.Component {
           isExact={true}
           component={DefaultVersionContainer}
         />
-      </div>
+      </>
     )
   }
 }
