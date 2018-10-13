@@ -37,7 +37,7 @@ class DefaultVersionContainer extends React.Component<IDefaultMapContainerProps,
             animationLength={750}
             width={`100vw`}
             height={`calc(100vh - 100px)`}
-            dataSourceHost="http://localhost:5000"
+            dataSourceHost="//valnatt-api-lb-560557469.eu-west-2.elb.amazonaws.com"
             onAreaClicked={this.handleAreaClick}
             onAreaChanged={this.handleAreaChanged}
             onReset={this.handleReset}
