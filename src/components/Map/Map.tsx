@@ -51,7 +51,7 @@ class Map extends React.Component<IMapProps, {}> {
 
   public render() {
     return (
-      <div>
+      <>
         <svg
           ref={(ref: SVGSVGElement) => this.ref = ref}
           style={{width: this.props.width, height: this.props.height}}
@@ -64,7 +64,7 @@ class Map extends React.Component<IMapProps, {}> {
           onDataLoadCompleted={this.onDataLoadCompleted}
           delay={750}
         />
-      </div>
+      </>
     );
   }
 
